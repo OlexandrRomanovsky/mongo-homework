@@ -1,16 +1,20 @@
 const ArticleModel = require("../models/article");
+const UserleModel = require("../models/user");
 const { updateNumberOfArticles } = require("./user");
 var ObjectId = require("mongodb").ObjectID;
 
 function createArticle(req, res) {
   const newArticle = req.body;
-  const article = new ArticleModel(newArticle);
-  article.save();
-
-  if (newArticle.owner) {
-    updateNumberOfArticles(newArticle.owner, 1);
-  }
-  res.json(article);
+  UserleModel.findById({ _id: ObjectId(req.body.owner) }, (err, owner) => {
+    if (err) return console.log('There is no such author: ', err)
+    if (owner) {
+      console.log('111111111111111111', 111111111111111111)
+      const article = new ArticleModel(newArticle);
+      article.save();
+      updateNumberOfArticles(newArticle.owner, 1);
+      res.json(article);
+    }
+  });
 }
 
 function updateArticle(req, res) {
