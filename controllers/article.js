@@ -26,7 +26,6 @@ function updateArticle(req, res) {
   }
   ).then(article =>
     UserModel.findById(article.owner, (err, owner) => {
-      console.log("owner id", article.owner);
       if (err) {
         res.status(500).send(err);
       }
