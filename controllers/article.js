@@ -1,14 +1,15 @@
 const ArticleModel = require("../models/article");
-const UserleModel = require("../models/user");
+const UserModel = require("../models/user");
 const { updateNumberOfArticles } = require("./user");
 var ObjectId = require("mongodb").ObjectID;
 
 function createArticle(req, res) {
   const newArticle = req.body;
-  UserleModel.findById({ _id: ObjectId(req.body.owner) }, (err, owner) => {
-    if (err) return console.log('There is no such author: ', err)
+  UserModel.findById(req.body.owner, (err, owner) => {
+    if (err) {
+      return res.status(404).send(`Cant find author with id: ${req.body.owner}`);
+    }
     if (owner) {
-      console.log('111111111111111111', 111111111111111111)
       const article = new ArticleModel(newArticle);
       article.save();
       updateNumberOfArticles(newArticle.owner, 1);
@@ -20,18 +21,31 @@ function createArticle(req, res) {
 function updateArticle(req, res) {
   const articleId = req.params.id;
   const articleInput = req.body;
-  ArticleModel.findOneAndUpdate(
-    { _id: ObjectId(articleId) },
-    {
-      $set: articleInput
-    },
-    {},
-    err => {
+  ArticleModel.findById(articleId, (err) => {
+    if (err) {res.status(404).json(`Cant find article with id: ${articleId}`)}
+  }
+  ).then(article =>
+    UserModel.findById(article.owner, (err, owner) => {
+      console.log("owner id", article.owner);
       if (err) {
-        res.status(404).send(err);
+        res.status(500).send(err);
       }
-    }
-  ).then(article => res.json(article));
+      if (owner) {
+        ArticleModel.findOneAndUpdate(
+          { _id: ObjectId(articleId) },
+          {
+            $set: articleInput
+          },
+          {},
+          err => {
+            if (err) {
+              res.status(404).send(err);
+            }
+          }
+        ).then(article => res.json(article));
+      }
+    })
+  );
 }
 
 function deleteArticle(req, res) {
